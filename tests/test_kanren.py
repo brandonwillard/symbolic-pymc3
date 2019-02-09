@@ -6,7 +6,7 @@ from kanren.term import term, operator, arguments
 from kanren.assoccomm import eq_assoc, eq_comm
 from unification import var
 
-from spymc3.utils import graph_equal, to_meta
+from spymc3.utils import graph_equal
 from spymc3 import MvNormalRV
 from spymc3.meta import mt
 # theano-kanren-imports ends here
@@ -17,8 +17,8 @@ def test_terms():
     x, a, b = tt.dvectors('xab')
     test_expr = x + a * b
 
-    assert to_meta(test_expr.owner.op) == operator(test_expr)
-    assert to_meta(tuple(test_expr.owner.inputs)) == arguments(test_expr)
+    assert mt(test_expr.owner.op) == operator(test_expr)
+    assert mt(tuple(test_expr.owner.inputs)) == arguments(test_expr)
     assert graph_equal(test_expr, term(operator(test_expr),
                                        arguments(test_expr)))
 # theano-term-tests ends here
@@ -84,10 +84,10 @@ def test_assoccomm():
     assert graph_equal(tuple(test_expr.owner.inputs),
                        run(1, q, buildo(tt.add, q, test_expr))[0])
 
-    assert (to_meta(a),) == run(0, var('x'),
-                                (eq_comm, mt.mul(a, b), mt.mul(b, var('x'))))
-    assert (to_meta(a),) == run(0, var('x'),
-                                (eq_comm, mt.add(a, b), mt.add(b, var('x'))))
+    assert (mt(a),) == run(0, var('x'),
+                           (eq_comm, mt.mul(a, b), mt.mul(b, var('x'))))
+    assert (mt(a),) == run(0, var('x'),
+                           (eq_comm, mt.add(a, b), mt.add(b, var('x'))))
 
     res = run(0, var('x'),
               (eq_assoc,

@@ -1,6 +1,7 @@
 # [[file:~/projects/websites/brandonwillard.github.io/content/articles/src/org/symbolic-math-in-pymc3-new-op.org::create_random_variables][create_random_variables]]
 import theano
 import scipy
+import theano.tensor as tt
 
 from functools import partial
 
@@ -125,4 +126,45 @@ class MultinomialRVType(RandomVariable):
 
 
 MultinomialRV = MultinomialRVType()
+
+
+class Observed(tt.Op):
+    """An `Op` that establishes an observation relationship between a random
+    variable and a specific value.
+    """
+
+    def __init__(self):
+        self.view_map = {0: [0]}
+
+    def make_node(self, val, rv=None):
+        """
+        Parameters
+        ==========
+        val: Variable
+            The observed value.
+        rv: RandomVariable
+            The distribution from which `val` is assumed to be a sample value.
+        """
+        val = tt.as_tensor_variable(val)
+        inputs = [val]
+        if rv:
+            if not rv.owner or not isinstance(rv.owner.op, RandomVariable):
+                raise ValueError(f'`rv` must be a RandomVariable type: {rv}')
+
+            if val.type.convert_variable(rv) is None:
+                raise ValueError(
+                    ('`rv` and `val` do not have compatible types:'
+                     f' rv={rv}, val={val}'))
+            inputs += [rv]
+
+        return tt.Apply(self, inputs, [val.type()])
+
+    def perform(self, node, inputs, out):
+        out[0][0] = inputs[0]
+
+    def grad(self, inputs, outputs):
+        return outputs
+
+
+observed = Observed()
 # create_random_variables ends here

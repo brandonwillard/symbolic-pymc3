@@ -38,6 +38,13 @@ def _meta_reify_iter(rands):
     return reified_rands, any_unreified
 
 
+def _check_eq(a, b):
+    if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
+        return np.array_equal(a, b)
+    else:
+        return a == b
+
+
 class MetaSymbolType(abc.ABCMeta):
     def __new__(cls, name, bases, clsdict):
 
@@ -199,7 +206,7 @@ class MetaSymbol(metaclass=MetaSymbolType):
         #       not all(getattr(self, attr) == getattr(other, attr)
         #               for attr in b_slots)):
         #     return False
-        if not all(getattr(self, attr) == getattr(other, attr)
+        if not all(_check_eq(getattr(self, attr), getattr(other, attr))
                    for attr in a_slots):
             return False
 
@@ -275,7 +282,9 @@ class MetaOp(MetaSymbol):
         res_apply = MetaApply(self, args)
         tt_apply = res_apply.reify()
         if not self.is_meta(tt_apply):
-            return MetaVariable.from_obj(tt_apply.default_output())
+            res = MetaVariable.from_obj(tt_apply.default_output())
+            res.name = name
+            return res
         # TODO: Will this correctly associate the present meta `Op`
         # and its components with the resulting meta variable?
         # How about when `tt_apply` is fully reified?
@@ -284,7 +293,6 @@ class MetaOp(MetaSymbol):
         # used to infer the output type of this variable.
         ttype = ttype or var()
         index = index if index is not None else var()
-        name = name
 
         # We don't have a higher-order meta object model, so being wrong about
         # the exact type of output variable will cause problems.
@@ -470,10 +478,31 @@ class MetaScalarSharedVariable(MetaSharedVariable):
 
 # [[file:~/projects/websites/brandonwillard.github.io/content/articles/src/org/symbolic-math-in-pymc3-mcmc.org::theano-meta-accessor][theano-meta-accessor]]
 class TheanoMetaAccessor(object):
+    """Creates an object that can be used to implicitly
+    convert Theano functions and object into meta objects.
+
+    Use it like a namespace/module/package object, e.g.
+
+    >>> mt = TheanoMetaAccessor()
+    >>> mt.vector('a')
+    MetaTensorVariable(MetaTensorType('float64', (False,), None,
+    obj=TensorType(float64, vector)), None, None, 'a', obj=a)
+
+    Call it as a function to perform direct conversion to a meta
+    object, e.g.
+
+    >>> mt(tt.vector('a'))
+    MetaTensorVariable(MetaTensorType('float64', (False,), None,
+    obj=TensorType(float64, vector)), None, None, 'a', obj=a)
+
+    """
     namespaces = [tt]
 
     def __init__(self):
         pass
+
+    def __call__(self, x):
+        return MetaSymbol.from_obj(x)
 
     def __getattr__(self, obj):
 
