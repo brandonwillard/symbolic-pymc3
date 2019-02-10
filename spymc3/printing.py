@@ -341,7 +341,7 @@ class PreamblePPrinter(theano.printing.PPrinter):
 
         if latex_out and latex_env:
             label_out = f'\\label{{{latex_label}}}\n' if latex_label else ''
-            res = textwrap.indent(res, '\t\t')
+            res = textwrap.indent(res, '  ')
             res = (f"\\begin{{{latex_env}}}\n"
                    f"{res}\n"
                    f"{label_out}"
@@ -373,7 +373,7 @@ class ObservationPrinter(object):
             raise TypeError(f'Node Op is not of type `Observed`: {node.op}')
 
         val = node.inputs[0]
-        rv = node.inputs[1]
+        rv = node.inputs[1] if len(node.inputs) > 1 else None
         new_precedence = -1000
         try:
             old_precedence = getattr(pstate, 'precedence', None)
@@ -381,9 +381,11 @@ class ObservationPrinter(object):
 
             val_name = pprinter.process(val, pstate)
 
-            rv_name = pprinter.process(rv, pstate)
-
-            out_name = f'{rv_name} = {val_name}'
+            if rv:
+                rv_name = pprinter.process(rv, pstate)
+                out_name = f'{rv_name} = {val_name}'
+            else:
+                out_name = val_name
         finally:
             pstate.precedence = old_precedence
 
@@ -415,10 +417,13 @@ tt_pprint.assign(DirichletRV, RandomVariablePrinter('Dir'))
 tt_pprint.assign(PoissonRV, RandomVariablePrinter('Pois'))
 tt_pprint.assign(CauchyRV, RandomVariablePrinter('C'))
 tt_pprint.assign(MultinomialRV, RandomVariablePrinter('MN'))
+tt_pprint.assign(tt.basic._dot, theano.printing.OperatorPrinter('*', -1, 'left'))
 
 tt_tex_pprint = PreamblePPrinter(pstate_defaults={'latex': True})
 tt_tex_pprint.printers = copy(tt_pprint.printers)
 tt_tex_pprint.printers_dict = dict(tt_pprint.printers_dict)
+
+tt_tex_pprint.assign(tt.basic._dot, theano.printing.OperatorPrinter('\\;', -1, 'left'))
 tt_tex_pprint.assign(tt.mul, theano.printing.OperatorPrinter('\\odot', -1, 'either'))
 tt_tex_pprint.assign(tt.true_div, theano.printing.PatternPrinter(('\\frac{%(0)s}{%(1)s}', -1000)))
 tt_tex_pprint.assign(tt.pow, theano.printing.PatternPrinter(('{%(0)s}^{%(1)s}', -1000)))
