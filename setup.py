@@ -7,6 +7,10 @@ setup(
     install_requires=[
         'theano',
         'pymc3',
+        'pymc4',
+        'scipy',
+        'tf-nightly',
+        'tfp-nightly',
         'kanren',
         'multipledispatch',
         'unification',
