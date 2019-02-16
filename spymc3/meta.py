@@ -675,7 +675,7 @@ mt.dot = MetaSymbol.from_obj(tt.basic._dot)
 # a robust use of "proxy" Theano objects
 #
 
-def mt_zeros(shape, dtype=None):
+def mt_fill(num, shape, dtype=None):
     if not isinstance(shape,
                       (list, tuple,
                        MetaTensorVariable,
@@ -683,10 +683,11 @@ def mt_zeros(shape, dtype=None):
         shape = [shape]
     if dtype is None:
         dtype = tt.config.floatX
-    return mt.alloc(np.array(0, dtype=dtype), *shape)
+    return mt.alloc(np.array(num, dtype=dtype), *shape)
 
 
-mt.zeros = mt_zeros
+mt.zeros = partial(mt_fill, 0)
+mt.ones = partial(mt_fill, 1)
 
 
 def mt_diag(v, k=0):
