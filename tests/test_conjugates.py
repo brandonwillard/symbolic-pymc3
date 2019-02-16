@@ -1,18 +1,16 @@
 # [[file:~/projects/websites/brandonwillard.github.io/content/articles/src/org/symbolic-math-in-pymc3-mcmc.org::conjugate-rules-tests][conjugate-rules-tests]]
-import pytest
-
 import theano
 import theano.tensor as tt
 import numpy as np
 
 from theano.gof.opt import EquilibriumOptimizer
 from theano.gof import FunctionGraph
-from theano.gof.graph import inputs as tt_inputs, ancestors
+from theano.gof.graph import inputs as tt_inputs
 
-from spymc3 import MvNormalRV
+from spymc3 import MvNormalRV, observed
 from spymc3.opt import KanrenRelationSub
 from spymc3.utils import optimize_graph
-from spymc3.relations.conjugates import observed, conjugate_posteriors
+from spymc3.relations.conjugates import conjugate_posteriors
 
 theano.config.mode = 'FAST_COMPILE'
 theano.config.cxx = ''
